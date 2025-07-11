@@ -1058,14 +1058,53 @@
             }
         }
 
-        // Remote desktop typing
+        // Remote desktop typing with optional password masking
         function showDeskType() {
             if (xxdialogMode || desktop == null || desktop.State != 3) return;
             Q('DeskType').blur();
-            var x = '<div>' + "Enter text and click OK to remotely type it using a US english keyboard. Make sure to place the remote cursor at the correct position before proceeding." + '<div>';
-            x += '<textarea id=d2typeText style="margin-top:5px;width:100%;height:184px;resize:none" maxlength=2000></textarea>';
+
+            var x = '<div>' +
+                    "Enter text and click OK to remotely type it using a US english keyboard. Make sure to place the remote cursor at the correct position before proceeding." +
+                    '<div>';
+
+            // Checkbox allowing the user to hide the input
+            x += '<div style="margin-top:8px;">' +
+                    '<label style="font-weight: normal;">' +
+                        '<input type="checkbox" id="d2typeMask" style="margin-right:5px;">' +
+                        'Hide Input' +
+                    '</label>' +
+                 '</div>';
+
+            // Visible textarea wrapper
+            x += '<div id="d2clearWrapper" style="margin-top:5px;">' +
+                    '<textarea id="d2typeText" style="width:100%;height:140px;resize:none" maxlength=2000></textarea>' +
+                 '</div>';
+
+            // Password field wrapper
+            x += '<div id="d2passWrapper" style="margin-top:5px;display:none;">' +
+                    '<input type="password" id="d2typePass" style="width:100%;height:28px;" maxlength=2000>' +
+                 '</div>';
+
             setDialogMode(2, "Remote Keyboard Entry", 3, showDeskTypeEx, x);
             Q('d2typeText').focus();
+
+            setTimeout(function() {
+                Q('d2typeMask').addEventListener('change', function () {
+                    if (this.checked) {
+                        // Copy clear text to password field and show it
+                        Q('d2typePass').value = Q('d2typeText').value;
+                        Q('d2clearWrapper').style.display = 'none';
+                        Q('d2passWrapper').style.display = 'block';
+                        Q('d2typePass').focus();
+                    } else {
+                        // Move password back to clear text
+                        Q('d2typeText').value = Q('d2typePass').value;
+                        Q('d2passWrapper').style.display = 'none';
+                        Q('d2clearWrapper').style.display = 'block';
+                        Q('d2typeText').focus();
+                    }
+                });
+            }, 50);
         }
 
         var AmtDeskTypeTimer = null;
@@ -1073,7 +1112,13 @@
         var DeskTypeTranslate = { 39: 222, 42: 106, 43: 107, 44: 188, 45: 189, 46: 190, 47: 191, 59: 186, 61: 187, 91: 219, 92: 220, 93: 221, 96: 192, 191: 111 };
         var DeskTypeShiftTranslate = { 33: 49, 34: 222, 35: 51, 36: 52, 37: 53, 38: 55, 40: 57, 41: 48, 58: 186, 60: 188, 62: 190, 63: 191, 64: 50, 94: 54, 95: 189, 106: 56, 107: 187, 123: 219, 124: 220, 125: 221, 126: 192 };
         function showDeskTypeEx() {
-            var txt = Q('d2typeText').value, ltxt = Q('d2typeText').value.toUpperCase(), x = [], shift = false;
+            var txt, ltxt, x = [], shift = false;
+            if (Q('d2typeMask') && Q('d2typeMask').checked) {
+                txt = Q('d2typePass').value;
+            } else {
+                txt = Q('d2typeText').value;
+            }
+            ltxt = txt.toUpperCase();
             if (desktop.contype == 2) {
                 // Intel AMT
                 for (var i in txt) { var a = txt.charCodeAt(i); x.push([a, 1], [a, 0]); }
