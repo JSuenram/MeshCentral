@@ -172,7 +172,7 @@ get_proxy_service_group() {
     # Fallback to service user's primary group, or root
     local svc_user
     svc_user=$(get_proxy_service_user)
-    if [ "$svc_user" != "root" ] && id -gn "$svc_user" >/dev/null 2>&1; then
+    if [ "$svc_user" != "root" ] && id "$svc_user" >/dev/null 2>&1; then
         id -gn "$svc_user"
     else
         echo "root"
@@ -200,11 +200,11 @@ fix_ssl_permissions() {
         chmod 750 "$(dirname "$cert_file")"
     fi
 
-    # Certificate file: readable by everyone (public key, not sensitive)
+    # Certificate file: readable by owner and group (principle of least privilege)
     if [ -f "$cert_file" ]; then
         chown root:"${svc_group}" "$cert_file"
-        chmod 644 "$cert_file"
-        log_ok "Zertifikat-Berechtigungen gesetzt: ${cert_file} (644, root:${svc_group})"
+        chmod 640 "$cert_file"
+        log_ok "Zertifikat-Berechtigungen gesetzt: ${cert_file} (640, root:${svc_group})"
     else
         log_warn "Zertifikat nicht gefunden: ${cert_file}"
     fi
